@@ -1,20 +1,9 @@
 import dpkt
-import datetime
 import socket
 from dpkt.compat import compat_ord
 
 sender = '130.245.145.12'
 receiver = '128.208.2.198'
-
-def mac_addr(address):
-    """Convert a MAC address to a readable/printable string
-
-       Args:
-           address (str): a MAC address in hex form (e.g. '\x01\x02\x03\x04\x05\x06')
-       Returns:
-           str: Printable/readable MAC address
-    """
-    return ':'.join('%02x' % compat_ord(b) for b in address)
 
 def get_ip(ip):
     return socket.inet_ntop(socket.AF_INET, ip) #Can assume sender & receiver are IP4 addrs
@@ -23,22 +12,45 @@ def analysis_pcap_tcp(file):
     f = open(file, 'rb')
     pcap = dpkt.pcap.Reader(f)
 
+    flows = dict()
+
     for timestamp, buf in pcap:
-        # Print out the timestamp in UTC
-        print('Timestamp: ', str(datetime.datetime.utcfromtimestamp(timestamp)))
-
-        # Unpack the Ethernet frame (mac src/dst, ethertype)
         eth = dpkt.ethernet.Ethernet(buf)
-        print('Ethernet Frame: ', mac_addr(eth.src), mac_addr(eth.dst), eth.type)
-
         ip_packet = eth.data
 
+        if get_ip(ip_packet.src) != sender:
+            continue #Disregard flows where src port is not sender
+
         #If the data portion of the ip packet is a TCP segment, parse the TCP segment
-        if isinstance(eth.data.data, dpkt.tcp.TCP):  
-            print(f'Sender: {get_ip(ip_packet.src)} Receiver: {get_ip(ip_packet.dst)}')
-            
+        if isinstance(ip_packet.data, dpkt.tcp.TCP):  
             tcp_segment = ip_packet.data
-            print(f'Sequence Number: {tcp_segment.seq}, Ack Number: {tcp_segment.ack}\n')
+
+            flow_key = f'({tcp_segment.sport}, {get_ip(ip_packet.src)}, {tcp_segment.dport}, {get_ip(ip_packet.dst)})'
+    
+            #TCP flow is identified by the src dst tuple
+            #Add this TCP packet to said TCP flow
+            if flow_key not in flows:
+                flows[flow_key] = [ip_packet]
+                continue
+            
+            flows[flow_key].append(ip_packet)
+    
+    print(f'Number of flows: {len(flows)}')   
+
+    for index, flow in enumerate(flows): 
+        print(f'Flow #{index+1}: {flow}')
+        flows[flow].sort(key=lambda packet: packet.data.seq) #Make sure the packets are in order by seq #
+        
+        for p_index, packets in enumerate(flows[flow]):
+            tcp_segment = packets.data
+
+            sync = tcp_segment.flags & dpkt.tcp.TH_SYN
+            ack = tcp_segment.flags & dpkt.tcp.TH_ACK
+
+            if sync or p_index < 2:
+                continue #Ignore sync and synack transactions
+                
+            print(f'flow {index+1} | Transaction {p_index-1}: Sequence #: {tcp_segment.seq} Ack #: {tcp_segment.ack} Received Window Size: {tcp_segment.win}')
 
     f.close()
 
