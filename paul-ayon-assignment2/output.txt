@@ -1,17 +1,44 @@
 Number of flows: 3
 
 Flow #1: (43498, 130.245.145.12, 80, 128.208.2.198)
-flow 1 | Transaction 1: Sequence #: 705669103 Ack #: 1921750144 Received Window Size: 3
-flow 1 | Transaction 2: Sequence #: 705669127 Ack #: 1921750144 Received Window Size: 3
-Throughput: 10320112 bytes
+
+flow 1: Sender -> Receiver | Transaction 1 Sequence #: 705669103 Ack #: 1921750144 Received Window Size: 3
+flow 1: Sender -> Receiver | Transaction 2 Sequence #: 705669127 Ack #: 1921750144 Received Window Size: 3
+flow 1: Receiver -> Sender | Transaction 1 Sequence #: 1921750144 Ack #: 705669127 Received Window Size: 3
+flow 1: Receiver -> Sender | Transaction 2 Sequence #: 1921750144 Ack #: 705670575 Received Window Size: 3
+
+Throughput: 10318648 bytes
+Total RTT: 73.00 ms
+Congestion Window Sizes: [13, 28, 57]
+Total retransmissions: 3
+    Retransmissions due to Triple Duplicate Acks: 2
+    Retransmissions due to timeout: 1
 
 Flow #2: (43500, 130.245.145.12, 80, 128.208.2.198)
-flow 2 | Transaction 1: Sequence #: 3636173852 Ack #: 2335809728 Received Window Size: 3
-flow 2 | Transaction 2: Sequence #: 3636173876 Ack #: 2335809728 Received Window Size: 3
-Throughput: 10454792 bytes
+
+flow 2: Sender -> Receiver | Transaction 1 Sequence #: 3636173852 Ack #: 2335809728 Received Window Size: 3
+flow 2: Sender -> Receiver | Transaction 2 Sequence #: 3636173876 Ack #: 2335809728 Received Window Size: 3
+flow 2: Receiver -> Sender | Transaction 1 Sequence #: 2335809728 Ack #: 3636173876 Received Window Size: 3
+flow 2: Receiver -> Sender | Transaction 2 Sequence #: 2335809728 Ack #: 3636175324 Received Window Size: 3
+
+Throughput: 10453328 bytes
+Total RTT: 72.71 ms
+Congestion Window Sizes: [10, 34, 42]
+Total retransmissions: 92
+    Retransmissions due to Triple Duplicate Acks: 2
+    Retransmissions due to timeout: 90
 
 Flow #3: (43502, 130.245.145.12, 80, 128.208.2.198)
-flow 3 | Transaction 1: Sequence #: 2558634630 Ack #: 3429921723 Received Window Size: 3
-flow 3 | Transaction 2: Sequence #: 2558634654 Ack #: 3429921723 Received Window Size: 3
-Throughput: 1071864 bytes
+
+flow 3: Sender -> Receiver | Transaction 1 Sequence #: 2558634630 Ack #: 3429921723 Received Window Size: 3
+flow 3: Sender -> Receiver | Transaction 2 Sequence #: 2558634654 Ack #: 3429921723 Received Window Size: 3
+flow 3: Receiver -> Sender | Transaction 1 Sequence #: 3429921723 Ack #: 2558634654 Received Window Size: 3
+flow 3: Receiver -> Sender | Transaction 2 Sequence #: 3429921723 Ack #: 2558636102 Received Window Size: 3
+
+Throughput: 1071608 bytes
+Total RTT: 73.51 ms
+Congestion Window Sizes: [28, 55, 60]
+Total retransmissions: 0
+    Retransmissions due to Triple Duplicate Acks: 0
+    Retransmissions due to timeout: 0
 
