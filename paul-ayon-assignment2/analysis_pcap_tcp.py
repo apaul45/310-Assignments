@@ -55,16 +55,23 @@ def analysis_pcap_tcp(file):
         total_bytes = 0
         transactions = [[], []]
         rtt = flows[flow][0]["timestamp"]
+        startOfWindow = 0
+        congestionWindows = []
 
         for p_index, p in enumerate(flows[flow]):
             ip = get_ip(p["packet"].src)
             tcp_segment = p["packet"].data
+            timestamp = p["timestamp"]
 
             if tcp_segment.flags & dpkt.tcp.TH_FIN:
                 break
 
             if p_index == 1:
-                rtt = p["timestamp"] - rtt
+                rtt = timestamp - rtt #Using the synack as estimation for 1 RTT
+
+                #Initialize the very first congestion window at the timestamp of the SYNACK, but don't count SYNACK packet
+                startOfWindow = timestamp
+                congestionWindows.append(0)
 
             # Skip connection establishment
             if tcp_segment.flags & dpkt.tcp.TH_SYN:
@@ -82,8 +89,18 @@ def analysis_pcap_tcp(file):
                 transactions[1].append(tcp_segment)
                 print(f'flow {index + 1}: Receiver -> Sender | Transaction {len(transactions[1])} Sequence #: {tcp_segment.seq} Ack #: {tcp_segment.ack} Received Window Size: {tcp_segment.win}')
 
+            #If timestamp falls within this window (ie, 1 RTT from the start of window), add it
+            if len(congestionWindows) < 4 and len(transactions[0]) > 0:
+                if timestamp <= startOfWindow + rtt:
+                    congestionWindows[-1]+=1
+                    continue
+
+                startOfWindow = timestamp
+                congestionWindows.append(1)
+
         print(f'Throughput: {total_bytes} bytes')
-        print(f'Total RTT: {rtt*1000:.2f} ms\n')
+        print(f'Total RTT: {rtt*1000:.2f} ms')
+        print(f'Congestion Window Sizes: {congestionWindows[0:3]}\n')
 
     ############### PART 2 ###############
     ##TODO
