@@ -13,6 +13,7 @@ Congestion Window Sizes: [13, 28, 57]
 Total retransmissions: 3
     Retransmissions due to Triple Duplicate Acks: 2
     Retransmissions due to timeout: 1
+    Retransmissions due to other reasons: 1
 
 Flow #2: (43500, 130.245.145.12, 80, 128.208.2.198)
 
@@ -27,6 +28,7 @@ Congestion Window Sizes: [10, 34, 42]
 Total retransmissions: 92
     Retransmissions due to Triple Duplicate Acks: 2
     Retransmissions due to timeout: 90
+    Retransmissions due to other reasons: 3
 
 Flow #3: (43502, 130.245.145.12, 80, 128.208.2.198)
 
@@ -41,4 +43,5 @@ Congestion Window Sizes: [28, 55, 60]
 Total retransmissions: 0
     Retransmissions due to Triple Duplicate Acks: 0
     Retransmissions due to timeout: 0
+    Retransmissions due to other reasons: 1
 

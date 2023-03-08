@@ -56,6 +56,7 @@ def analysis_pcap_tcp(file):
         receiver_count = 0 #Used to identify 3 consecutive matching receiver acks
         triple_duplicate_acks_transmitted = 0
         timeout_retransmissions = 0
+        other_transmissions = 0
 
         for p_index, p in enumerate(flows[flow]):
             ip = get_ip(p["packet"].src)
@@ -87,17 +88,22 @@ def analysis_pcap_tcp(file):
 
                 #Check for retransmission
                 if tcp_segment.seq in sender_packets:
-                    #Check for timeout -- ie, if the RTO (which is 2 RTT', RTT' being estimated RTT) has been reached
-                    if timestamp - sender_packets[tcp_segment.seq] >= 2 * rtt:
-                        timeout_retransmissions+=1
-
                     #Determine triple duplicate ack by checking if sender packet matches any 3 consecutive acks
-                    for ack_trio in ack_trios:
-                        ack = flows[flow][ack_trio[0]]["packet"].data.ack
+                    def check_duplicate_ack():
+                        for ack_trio in ack_trios:
+                            ack = flows[flow][ack_trio[0]]["packet"].data.ack
 
-                        if tcp_segment.seq == ack:
-                            triple_duplicate_acks_transmitted+=1
-                            break
+                            if tcp_segment.seq == ack:
+                                return True 
+                        return False
+                    
+                    if check_duplicate_ack():
+                        triple_duplicate_acks_transmitted+=1
+                     #Check for timeout -- ie, if the RTO (which is 2 RTT', RTT' being estimated RTT) has been reached
+                    elif timestamp - sender_packets[tcp_segment.seq] >= 2 * rtt:
+                        timeout_retransmissions+=1
+                    else:
+                        other_transmissions+=1
 
                 sender_packets[tcp_segment.seq] = timestamp
             
@@ -128,7 +134,8 @@ def analysis_pcap_tcp(file):
         print(f'Congestion Window Sizes: {congestion_windows[0:3]}')
         print(f'Total retransmissions: {triple_duplicate_acks_transmitted + timeout_retransmissions}')
         print(f'    Retransmissions due to Triple Duplicate Acks: {triple_duplicate_acks_transmitted}') 
-        print(f'    Retransmissions due to timeout: {timeout_retransmissions}\n')
+        print(f'    Retransmissions due to timeout: {timeout_retransmissions}')
+        print(f'    Retransmissions due to other reasons: {other_transmissions}\n')
 
     f.close()
 
