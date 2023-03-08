@@ -52,8 +52,7 @@ def analysis_pcap_tcp(file):
         start_of_window = 0
         congestion_windows = []
         sender_packets = dict()
-        ack_trios = []
-        receiver_count = 0 #Used to identify 3 consecutive matching receiver acks
+        ack_trios = [] #Used for storing the last 3 receiver acks seen for triple duplicate ack
         triple_duplicate_acks_transmitted = 0
         timeout_retransmissions = 0
         other_transmissions = 0
@@ -72,13 +71,17 @@ def analysis_pcap_tcp(file):
                 #Initialize the very first congestion window at the timestamp of the SYNACK, but don't count SYNACK packet
                 start_of_window = timestamp
                 congestion_windows.append(0)
+            
+            #Consider all receiver packets when storing the last 3 receiver acks seen
+            if ip == receiver:
+                ack_trios.append(tcp_segment.ack)
+                ack_trios = ack_trios[1:4] if len(ack_trios) > 3 else ack_trios
 
             # Skip connection establishment
             if tcp_segment.flags & dpkt.tcp.TH_SYN:
                 continue
 
             if ip == sender:
-                receiver_count = 0 #Reset count
                 total_bytes += len(tcp_segment) #Add to throughput if packet from sender
 
                 #Only consider transactions where sender has a payload, for a total of 2 transactions
@@ -88,40 +91,29 @@ def analysis_pcap_tcp(file):
 
                 #Check for retransmission
                 if tcp_segment.seq in sender_packets:
-                    #Determine triple duplicate ack by checking if sender packet matches any 3 consecutive acks
-                    def check_duplicate_ack():
-                        for ack_trio in ack_trios:
-                            ack = flows[flow][ack_trio[0]]["packet"].data.ack
-
-                            if tcp_segment.seq == ack:
-                                return True 
-                        return False
+                    #If last 3 receiver acks seen are identical, then retransmission from triple dup ack
+                    if len(ack_trios) == 3 and len(set(ack_trios)) == 1:
+                        triple_duplicate_acks_transmitted += 1 
                     
-                    if check_duplicate_ack():
-                        triple_duplicate_acks_transmitted+=1
-                     #Check for timeout -- ie, if the RTO (which is 2 RTT', RTT' being estimated RTT) has been reached
+                    #Check if transmitted after timeout (2 RTT')
                     elif timestamp - sender_packets[tcp_segment.seq] >= 2 * rtt:
                         timeout_retransmissions+=1
+                        
                     else:
                         other_transmissions+=1
 
                 sender_packets[tcp_segment.seq] = timestamp
             
             if ip == receiver:
-                receiver_count += 1
-
                 #Only consider the first 2 receiver packets that match sender packets
                 if len(transactions[1]) < 2 and compare_sender_receiver(transactions[0], tcp_segment):
                     transactions[1].append(tcp_segment)
                     print(f'flow {index + 1}: Receiver -> Sender | Transaction {len(transactions[1])} Sequence #: {tcp_segment.seq} Ack #: {tcp_segment.ack} Received Window Size: {tcp_segment.win}')
-                
-                #Check if 3 consecutive acks have occurred in a row
-                if receiver_count == 3:
-                    ack_trios.append([p_index-2, p_index-1, p_index])
-                    receiver_count = 0 #Reset count to prevent duplicate pairs
 
-            #If timestamp falls within this window (ie, 1 RTT from the start of window), add it
-            if len(congestion_windows) < 4 and len(transactions[0]) > 0:
+            #Find the first 3 congestion window sizes
+            if len(congestion_windows) < 4:
+                #If timestamp falls within this window (ie, 1 RTT from the start of window), add it
+                #Else, create new window
                 if timestamp <= start_of_window + rtt:
                     congestion_windows[-1]+=1
                     continue
@@ -135,7 +127,7 @@ def analysis_pcap_tcp(file):
         print(f'Total retransmissions: {triple_duplicate_acks_transmitted + timeout_retransmissions}')
         print(f'    Retransmissions due to Triple Duplicate Acks: {triple_duplicate_acks_transmitted}') 
         print(f'    Retransmissions due to timeout: {timeout_retransmissions}')
-        print(f'    Retransmissions due to other reasons: {other_transmissions}\n')
+        print(f'Retransmissions due to other reasons: {other_transmissions}\n')
 
     f.close()
 
