@@ -7,24 +7,17 @@ receiver = '128.208.2.198'
 def get_ip(ip):
     return socket.inet_ntop(socket.AF_INET, ip)  # Can assume sender & receiver are IP4 addrs
 
-#Helper function used to find transactions
-def compare_sender_receiver(sender_transactions, tcp):
-    for transaction in sender_transactions:
-        if transaction.seq < tcp.ack:
-            return True
-    return False
-
 def analysis_pcap_tcp(file):
     f = open(file, 'rb')
     pcap = dpkt.pcap.Reader(f)
 
-    flows = dict()
+    flows = dict() #Use for organizing packets by the flow they're in
 
     for timestamp, buf in pcap:
         eth = dpkt.ethernet.Ethernet(buf)
         ip_packet = eth.data
 
-        # If the data portion of the ip packet is a TCP segment, parse the TCP segment
+        #Only consider TCP packets
         if isinstance(ip_packet.data, dpkt.tcp.TCP):
             tcp_segment = ip_packet.data
 
@@ -46,9 +39,9 @@ def analysis_pcap_tcp(file):
     for index, flow in enumerate(flows):
         print(f'Flow #{index + 1}: {flow}\n')
 
-        total_bytes = 0
+        total_bytes = 0 #Used for throughput
         transactions = [[], []]
-        rtt = flows[flow][0]["timestamp"]
+        rtt = flows[flow][0]["timestamp"] #Used to measure 1 RTT
         start_of_window = 0
         congestion_windows = []
         sender_packets = dict()
@@ -62,23 +55,21 @@ def analysis_pcap_tcp(file):
             tcp_segment = p["packet"].data
             timestamp = p["timestamp"]
 
+            #Last packet (and p_index) looked at will be that of first FIN
             if tcp_segment.flags & dpkt.tcp.TH_FIN:
-                break
+                break 
 
+            #Using SYNACK to estimate 1 RTT
             if p_index == 1:
-                rtt = timestamp - rtt #Using the synack as estimation for 1 RTT
-
-                #Initialize the very first congestion window at the timestamp of the SYNACK, but don't count SYNACK packet
-                start_of_window = timestamp
-                congestion_windows.append(0)
+                rtt = timestamp - rtt
             
             #Consider all receiver packets when storing the last 3 receiver acks seen
             if ip == receiver:
                 ack_trios.append(tcp_segment.ack)
                 ack_trios = ack_trios[1:4] if len(ack_trios) > 3 else ack_trios
 
-            # Skip connection establishment
-            if tcp_segment.flags & dpkt.tcp.TH_SYN:
+            #Skip connection establishment (ie, the three way handshake)
+            if tcp_segment.flags & dpkt.tcp.TH_SYN or flows[flow][p_index-1]["packet"].data.flags & dpkt.tcp.TH_SYN:
                 continue
 
             if ip == sender:
@@ -86,7 +77,7 @@ def analysis_pcap_tcp(file):
 
                 #Only consider transactions where sender has a payload, for a total of 2 transactions
                 if len(transactions[0]) < 2 and len(tcp_segment.data) != 0:
-                    transactions[0].append(tcp_segment)
+                    transactions[0].append(tcp_segment.seq)
                     print(f'flow {index + 1}: Sender -> Receiver | Transaction {len(transactions[0])} Sequence #: {tcp_segment.seq} Ack #: {tcp_segment.ack} Received Window Size: {tcp_segment.win}')
 
                 #Check for retransmission
@@ -95,7 +86,7 @@ def analysis_pcap_tcp(file):
                     if len(ack_trios) == 3 and len(set(ack_trios)) == 1:
                         triple_duplicate_acks_transmitted += 1 
                     
-                    #Check if transmitted after timeout (2 RTT')
+                    #Check if transmitted after timeout (2 RTT' has passed)
                     elif timestamp - sender_packets[tcp_segment.seq] >= 2 * rtt:
                         timeout_retransmissions+=1
                         
@@ -106,29 +97,38 @@ def analysis_pcap_tcp(file):
             
             if ip == receiver:
                 #Only consider the first 2 receiver packets that match sender packets
-                if len(transactions[1]) < 2 and compare_sender_receiver(transactions[0], tcp_segment):
+                if len(transactions[1]) < 2 and any(seq < tcp_segment.ack for seq in transactions[0]):
                     transactions[1].append(tcp_segment)
                     print(f'flow {index + 1}: Receiver -> Sender | Transaction {len(transactions[1])} Sequence #: {tcp_segment.seq} Ack #: {tcp_segment.ack} Received Window Size: {tcp_segment.win}')
 
             #Find the first 3 congestion window sizes
             if len(congestion_windows) < 4:
+                if start_of_window == 0:
+                    #Initialize the first congestion window after the three way handshake
+                    start_of_window = timestamp
+                    congestion_windows.append(0)
+
                 #If timestamp falls within this window (ie, 1 RTT from the start of window), add it
-                #Else, create new window
                 if timestamp <= start_of_window + rtt:
                     congestion_windows[-1]+=1
                     continue
-
+                
+                #If timestamp not within window, create a new window
                 start_of_window = timestamp
                 congestion_windows.append(1)
 
-        print(f'\nThroughput: {total_bytes} bytes')
+        #Consider total time as first FIN - first SYN
+        total_time = flows[flow][p_index]["timestamp"]-flows[flow][0]["timestamp"]
+
+        print(f'\nThroughput: {(total_bytes/total_time):.2f} bytes/s ({total_bytes} total bytes / {total_time:.2f} s)')
         print(f'Total RTT: {rtt*1000:.2f} ms')
         print(f'Congestion Window Sizes: {congestion_windows[0:3]}')
-        print(f'Total retransmissions: {triple_duplicate_acks_transmitted + timeout_retransmissions}')
-        print(f'    Retransmissions due to Triple Duplicate Acks: {triple_duplicate_acks_transmitted}') 
-        print(f'    Retransmissions due to timeout: {timeout_retransmissions}')
-        print(f'Retransmissions due to other reasons: {other_transmissions}\n')
+        print(f'Total retransmissions: {triple_duplicate_acks_transmitted + timeout_retransmissions + other_transmissions}')
+        print(f'\tRetransmissions due to Triple Duplicate Acks: {triple_duplicate_acks_transmitted}') 
+        print(f'\tRetransmissions due to timeout: {timeout_retransmissions}')
+        print(f'\tRetransmissions due to other reasons: {other_transmissions}\n')
 
     f.close()
 
-analysis_pcap_tcp('assignment2.pcap')
+if __name__ == "__main__":
+    analysis_pcap_tcp(input('Please enter the path to the file: '))

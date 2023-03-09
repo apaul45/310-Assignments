@@ -7,13 +7,13 @@ flow 1: Sender -> Receiver | Transaction 2 Sequence #: 705669127 Ack #: 19217501
 flow 1: Receiver -> Sender | Transaction 1 Sequence #: 1921750144 Ack #: 705669127 Received Window Size: 3
 flow 1: Receiver -> Sender | Transaction 2 Sequence #: 1921750144 Ack #: 705670575 Received Window Size: 3
 
-Throughput: 10318648 bytes
+Throughput: 5341819.68 bytes/s (10318616 total bytes / 1.93 s)
 Total RTT: 73.00 ms
-Congestion Window Sizes: [14, 28, 57]
+Congestion Window Sizes: [14, 32, 52]
 Total retransmissions: 3
-    Retransmissions due to Triple Duplicate Acks: 2
-    Retransmissions due to timeout: 1
-Retransmissions due to other reasons: 1
+        Retransmissions due to Triple Duplicate Acks: 2
+        Retransmissions due to timeout: 1
+        Retransmissions due to other reasons: 0
 
 Flow #2: (43500, 130.245.145.12, 80, 128.208.2.198)
 
@@ -22,13 +22,13 @@ flow 2: Sender -> Receiver | Transaction 2 Sequence #: 3636173876 Ack #: 2335809
 flow 2: Receiver -> Sender | Transaction 1 Sequence #: 2335809728 Ack #: 3636173876 Received Window Size: 3
 flow 2: Receiver -> Sender | Transaction 2 Sequence #: 2335809728 Ack #: 3636175324 Received Window Size: 3
 
-Throughput: 10453328 bytes
+Throughput: 1267855.19 bytes/s (10453296 total bytes / 8.24 s)
 Total RTT: 72.71 ms
-Congestion Window Sizes: [11, 34, 42]
+Congestion Window Sizes: [10, 34, 42]
 Total retransmissions: 94
-    Retransmissions due to Triple Duplicate Acks: 4
-    Retransmissions due to timeout: 90
-Retransmissions due to other reasons: 1
+        Retransmissions due to Triple Duplicate Acks: 4
+        Retransmissions due to timeout: 90
+        Retransmissions due to other reasons: 0
 
 Flow #3: (43502, 130.245.145.12, 80, 128.208.2.198)
 
@@ -37,11 +37,10 @@ flow 3: Sender -> Receiver | Transaction 2 Sequence #: 2558634654 Ack #: 3429921
 flow 3: Receiver -> Sender | Transaction 1 Sequence #: 3429921723 Ack #: 2558634654 Received Window Size: 3
 flow 3: Receiver -> Sender | Transaction 2 Sequence #: 3429921723 Ack #: 2558636102 Received Window Size: 3
 
-Throughput: 1071608 bytes
+Throughput: 1626105.70 bytes/s (1071576 total bytes / 0.66 s)
 Total RTT: 73.51 ms
-Congestion Window Sizes: [29, 55, 60]
+Congestion Window Sizes: [30, 56, 94]
 Total retransmissions: 0
-    Retransmissions due to Triple Duplicate Acks: 0
-    Retransmissions due to timeout: 0
-Retransmissions due to other reasons: 1
-
+        Retransmissions due to Triple Duplicate Acks: 0
+        Retransmissions due to timeout: 0
+        Retransmissions due to other reasons: 0
