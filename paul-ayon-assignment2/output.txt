@@ -1,3 +1,4 @@
+Please enter the path to the file: assignment2.pcap
 Number of flows: 3
 
 Flow #1: (43498, 130.245.145.12, 80, 128.208.2.198)
@@ -7,7 +8,8 @@ flow 1: Sender -> Receiver | Transaction 2 Sequence #: 705669127 Ack #: 19217501
 flow 1: Receiver -> Sender | Transaction 1 Sequence #: 1921750144 Ack #: 705669127 Received Window Size: 3
 flow 1: Receiver -> Sender | Transaction 2 Sequence #: 1921750144 Ack #: 705670575 Received Window Size: 3
 
-Throughput: 5341819.68 bytes/s (10318616 total bytes / 1.93 s)
+Number of packets examined: 11106
+Throughput: 5551974.51 bytes/s (10318616 total bytes / 1.86 s)
 Total RTT: 73.00 ms
 Congestion Window Sizes: [14, 32, 52]
 Total retransmissions: 3
@@ -22,7 +24,8 @@ flow 2: Sender -> Receiver | Transaction 2 Sequence #: 3636173876 Ack #: 2335809
 flow 2: Receiver -> Sender | Transaction 1 Sequence #: 2335809728 Ack #: 3636173876 Received Window Size: 3
 flow 2: Receiver -> Sender | Transaction 2 Sequence #: 2335809728 Ack #: 3636175324 Received Window Size: 3
 
-Throughput: 1267855.19 bytes/s (10453296 total bytes / 8.24 s)
+Number of packets examined: 11834
+Throughput: 1279148.16 bytes/s (10453296 total bytes / 8.17 s)
 Total RTT: 72.71 ms
 Congestion Window Sizes: [10, 34, 42]
 Total retransmissions: 94
@@ -37,7 +40,8 @@ flow 3: Sender -> Receiver | Transaction 2 Sequence #: 2558634654 Ack #: 3429921
 flow 3: Receiver -> Sender | Transaction 1 Sequence #: 3429921723 Ack #: 2558634654 Received Window Size: 3
 flow 3: Receiver -> Sender | Transaction 2 Sequence #: 3429921723 Ack #: 2558636102 Received Window Size: 3
 
-Throughput: 1626105.70 bytes/s (1071576 total bytes / 0.66 s)
+Number of packets examined: 1185
+Throughput: 1830664.43 bytes/s (1071576 total bytes / 0.59 s)
 Total RTT: 73.51 ms
 Congestion Window Sizes: [30, 56, 94]
 Total retransmissions: 0

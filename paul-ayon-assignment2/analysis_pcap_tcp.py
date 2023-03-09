@@ -40,6 +40,7 @@ def analysis_pcap_tcp(file):
         print(f'Flow #{index + 1}: {flow}\n')
 
         total_bytes = 0 #Used for throughput
+        first_sender_transaction = 0 #Keeps track of timestamp of first sender transaction
         transactions = [[], []]
         rtt = flows[flow][0]["timestamp"] #Used to measure 1 RTT
         start_of_window = 0
@@ -77,6 +78,7 @@ def analysis_pcap_tcp(file):
 
                 #Only consider transactions where sender has a payload, for a total of 2 transactions
                 if len(transactions[0]) < 2 and len(tcp_segment.data) != 0:
+                    first_sender_transaction = timestamp if not first_sender_transaction else first_sender_transaction
                     transactions[0].append(tcp_segment.seq)
                     print(f'flow {index + 1}: Sender -> Receiver | Transaction {len(transactions[0])} Sequence #: {tcp_segment.seq} Ack #: {tcp_segment.ack} Received Window Size: {tcp_segment.win}')
 
@@ -117,10 +119,10 @@ def analysis_pcap_tcp(file):
                 start_of_window = timestamp
                 congestion_windows.append(1)
 
-        #Consider total time as first FIN - first SYN
-        total_time = flows[flow][p_index]["timestamp"]-flows[flow][0]["timestamp"]
-
-        print(f'\nThroughput: {(total_bytes/total_time):.2f} bytes/s ({total_bytes} total bytes / {total_time:.2f} s)')
+        #Consider total time as first FIN - timestamp of first sender transaction packet
+        total_time = flows[flow][p_index]["timestamp"]-first_sender_transaction
+        print(f'\nNumber of packets examined: {len(flows[flow])}')
+        print(f'Throughput: {(total_bytes/total_time):.2f} bytes/s ({total_bytes} total bytes / {total_time:.2f} s)')
         print(f'Total RTT: {rtt*1000:.2f} ms')
         print(f'Congestion Window Sizes: {congestion_windows[0:3]}')
         print(f'Total retransmissions: {triple_duplicate_acks_transmitted + timeout_retransmissions + other_transmissions}')
