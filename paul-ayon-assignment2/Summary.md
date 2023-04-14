@@ -39,6 +39,8 @@ The **start_of_window** variable is then used to store the timestamp of the begi
 
 A packet is considered to be a part of the window if its timestamp is within a RTT of the start_of_window. If it is not part of the window, then it timestamp is assigned to start_of_window and a new window begins. All packets from the flow up until a FIN flag is seen are considered in the calculation.
 
+In terms of the increases seen from window to window, this may have been due to the version of TCP used. That is, the slow start phase may have been the reason why the congestion window increased over time as the connection slowly went into the congestion avoidance phase. If not this, then it may be because the router was more busy (congested) early on but was able to speed up once less packets were being sent.
+
 <br/>
 
 ## Finding and examining retransmissions
