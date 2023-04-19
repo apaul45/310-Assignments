@@ -1,16 +1,17 @@
+from collections import defaultdict
 import ipaddress
 import struct
 import sys
 import dpkt
 
-arp_packet_structure = ["hardware_type", "protocol_type", "hardware_size", "protocol_size",
-                        "opcode", "sender_mac", "sender_ip", "target_mac", "target_ip"]
+arp_packet_structure = ["Hardware Type", "Protocol Type", "Hardware Size", "Protocol Size",
+                        "Opcode", "Sender MAC Address", "Sender IP Address", "Target MAC Address", "Target IP Address"]
 
 def analysis_pcap_arp(file):
     f = open(file, 'rb')
     pcap = dpkt.pcap.Reader(f)
 
-    exchanges = dict() #Keep track of ARP packet exchanges
+    exchanges = defaultdict(list) #Keep track of ARP packet exchanges
 
     for timestamp, packet in pcap:  
       type = packet[12:14] #Type from byte 13-14 (2 bytes)
@@ -22,24 +23,27 @@ def analysis_pcap_arp(file):
         header = {element: value for element, value in zip(arp_packet_structure, header)}
 
         #Make IP addresses more readable
-        for element in ["sender_ip", "target_ip"]:
+        for element in ["Sender IP Address", "Target IP Address"]:
            header[element] = ipaddress.ip_address(header[element])
 
         #Make MAC addresses more readable
-        for element in ["sender_mac", "target_mac"]: #Make MAC address more readable
+        for element in ["Sender MAC Address", "Target MAC Address"]: #Make MAC address more readable
            mac = header[element].hex()
            header[element] = ':'.join([mac[i : i + 2] for i in range(0, len(mac), 2)]) 
         
         #Map this packet to the correct exchange
-        exchange_key =  f'({header["sender_ip"]},{header["target_ip"]})'
-        reverse_key =  f'({header["target_ip"]},{header["sender_ip"]})'
-
-        if not any(x in exchanges for x in [exchange_key, reverse_key]):
-           exchanges[exchange_key] = [header]
-           continue
+        exchange_key =  f'({header["Sender IP Address"]},{header["Target IP Address"]})'
+        reverse_key =  f'({header["Target IP Address"]},{header["Sender IP Address"]})' #Reverse for ARP Replies
         
-        exchanges[reverse_key].append(header)
-    
+        #Will either initialize new key value entry, or add to existing and reverse
+        #The latter assumes the matching ARP reply was found first
+        if header["Opcode"] == 1:
+         exchanges[exchange_key].append(header)
+         exchanges[exchange_key].reverse()
+         
+        elif header["Opcode"] == 2:
+         exchanges[reverse_key].append(header) #Append ARP reply to either existing or new keyval pair
+
     complete_exchanges = {k: v for k, v in exchanges.items() if len(v) > 1}
 
     #Print first exchange that has both request and reply, if such exists

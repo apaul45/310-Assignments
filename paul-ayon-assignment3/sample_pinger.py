@@ -130,7 +130,8 @@ def ping(host, timeout=1):
     except KeyboardInterrupt:
         # TODO
         # calculate statistic here
-        print(f'round-trip min/avg/max {rtt_min:.2f}/{rtt_sum/rtt_cnt:.2f}/{rtt_max:.2f} ms')
+        print(f'--- {sys.argv[1]} statistics ---')
+        print(f'round-trip min/avg/max {rtt_min:.3f}/{rtt_sum/rtt_cnt:.3f}/{rtt_max:.3f} ms')
         return
         # TODO END
 
